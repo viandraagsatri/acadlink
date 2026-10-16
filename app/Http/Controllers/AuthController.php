@@ -3,28 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function showLogin()
+    public function showLogin(): View
     {
         return view('auth.login');
     }
 
-    public function login(Request $request)
+    public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            // Sementara ke home. Di Step 5 diganti ke dashboard sesuai role.
-            return redirect()->intended('/');
+            return redirect()->intended(route('home'));
         }
 
         return back()->withErrors([
@@ -32,18 +33,18 @@ class AuthController extends Controller
         ])->onlyInput('email');
     }
 
-    public function showRegister()
+    public function showRegister(): View
     {
         return view('auth.register');
     }
 
-    public function register(Request $request)
+    public function register(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'nim_nip'  => ['required', 'string', 'max:30', 'unique:users,nim_nip'],
-            'email'    => ['required', 'email', 'unique:users,email'],
-            'role'     => ['required', 'in:mahasiswa,dosen'],
+            'name' => ['required', 'string', 'max:255'],
+            'nim_nip' => ['required', 'string', 'max:30', 'unique:users,nim_nip'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'role' => ['required', 'in:mahasiswa,dosen'],
             'password' => ['required', 'min:8', 'confirmed'],
         ]);
 
@@ -52,10 +53,10 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect('/');
+        return redirect()->route('home');
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();

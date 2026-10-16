@@ -1,31 +1,49 @@
-<nav class="navbar navbar-expand-md navbar-lilac">
+<nav class="navbar navbar-expand-md navbar-lilac sticky-top">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="{{ route('home') }}">AcadLink</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ route('home') }}">
+            <i class="bi bi-mortarboard-fill me-2 fs-4 text-purple"></i>
+            <span>AcadLink</span>
+        </a>
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navMenu">
             <ul class="navbar-nav me-auto">
-                {{-- Sementara tampil semua. Nanti dipisah per role (Step 5) --}}
-                @include('partials.menu-mahasiswa')
-                @include('partials.menu-dosen')
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('home') ? 'active fw-semibold' : '' }}" href="{{ route('home') }}">
+                    Beranda
+                    </a>
+                </li>
+                @auth
+                    @if (auth()->user()->isDosen())
+                        @include('partials.menu-dosen')
+                    @endif
+                @endauth
             </ul>
 
-            <ul class="navbar-nav ms-auto align-items-md-center">
+            <ul class="navbar-nav ms-auto align-items-md-center gap-2">
                 @guest
-                    <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ route('register') }}">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('login') }}">Masuk</a></li>
+                    <li class="nav-item"><a class="btn btn-primary btn-sm px-3" href="{{ route('register') }}">Daftar</a></li>
                 @endguest
 
                 @auth
                     <li class="nav-item">
-                        <span class="navbar-text me-md-3">{{ auth()->user()->name }} ({{ auth()->user()->role }})</span>
+                        <div class="navbar-text d-flex align-items-center me-md-2">
+                            <span class="badge bg-white text-dark border me-2 py-1 px-2">
+                                <i class="bi {{ auth()->user()->isDosen() ? 'bi-person-badge' : 'bi-mortarboard' }} me-1"></i>
+                                {{ ucfirst(auth()->user()->role) }}
+                            </span>
+                            <span class="fw-semibold">{{ auth()->user()->name }}</span>
+                        </div>
                     </li>
                     <li class="nav-item">
-                        <form method="POST" action="{{ route('logout') }}">
+                        <form method="POST" action="{{ route('logout') }}" class="d-inline">
                             @csrf
-                            <button type="submit" class="btn btn-outline-dark btn-sm">Logout</button>
+                            <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                                <i class="bi bi-box-arrow-right me-1"></i> Keluar
+                            </button>
                         </form>
                     </li>
                 @endauth
