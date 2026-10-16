@@ -1,0 +1,71 @@
+:root {
+    --lilac: #EBDCF6;
+    /* warna navbar */
+    --lilac-border: #D3B9E6;
+    /* garis tipis di bawah navbar */
+    --lilac-dark: #8E5FA8;
+    /* tombol */
+    --lilac-darker: #6F4488;
+    /* hover dan link */
+    --lilac-soft: #FAF6FD;
+    /* latar halaman */
+    --ink: #2E1F3B;
+}
+
+body {
+    background-color: var(--lilac-soft);
+    color: var(--ink);
+}
+
+a {
+    color: var(--lilac-darker);
+}
+
+a:hover {
+    color: var(--ink);
+}
+
+/* Navbar */
+.navbar-lilac {
+    background-color: var(--lilac);
+    border-bottom: 1px solid var(--lilac-border);
+}
+
+.navbar-lilac .navbar-brand,
+.navbar-lilac .nav-link,
+.navbar-lilac .navbar-text {
+    color: var(--ink);
+}
+
+.navbar-lilac .nav-link:hover,
+.navbar-lilac .nav-link:focus {
+    color: var(--lilac-darker);
+}
+
+/* Tombol utama */
+.btn-primary {
+    --bs-btn-bg: var(--lilac-dark);
+    --bs-btn-border-color: var(--lilac-dark);
+    --bs-btn-hover-bg: var(--lilac-darker);
+    --bs-btn-hover-border-color: var(--lilac-darker);
+    --bs-btn-active-bg: var(--lilac-darker);
+    --bs-btn-active-border-color: var(--lilac-darker);
+    --bs-btn-disabled-bg: var(--lilac-dark);
+    --bs-btn-disabled-border-color: var(--lilac-dark);
+}
+
+/* Form */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--lilac-dark);
+    box-shadow: 0 0 0 .25rem rgba(200, 162, 200, .4);
+}
+
+.form-check-input:checked {
+    background-color: var(--lilac-dark);
+    border-color: var(--lilac-dark);
+}
+
+.card {
+    border: 0;
+}
