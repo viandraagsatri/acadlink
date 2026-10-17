@@ -198,7 +198,7 @@
                 <p class="text-muted mb-0">NPM: {{ auth()->user()->nim_nip ?? '-' }} &bull; Pantau status pengajuan bimbingan dan jadwal konsultasi dosen.</p>
             </div>
             <div class="d-flex gap-2">
-                <a href="#" class="btn btn-primary btn-sm">
+                <a href="{{ route('mahasiswa.bimbingan.create') }}" class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-circle me-1"></i> Ajukan Bimbingan
                 </a>
             </div>

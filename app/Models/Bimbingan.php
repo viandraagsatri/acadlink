@@ -10,6 +10,10 @@ class Bimbingan extends Model
 {
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'jadwal_bimbingan' => 'datetime',
+    ];
+
     public function dosen(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dosen_id');
@@ -23,5 +27,10 @@ class Bimbingan extends Model
     public function revisis(): HasMany
     {
         return $this->hasMany(Revisi::class);
+    }
+
+    public function pesanChats(): HasMany
+    {
+        return $this->hasMany(PesanChat::class, 'bimbingan_id');
     }
 }
