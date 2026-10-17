@@ -51,17 +51,29 @@
 
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" name="password" id="password"
-                               class="form-control @error('password') is-invalid @enderror" required>
+                        <div class="input-group">
+                            <input type="password" name="password" id="password" autocomplete="new-password"
+                                   class="form-control @error('password') is-invalid @enderror" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password"
+                                    aria-label="Tampilkan password" title="Tampilkan password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         @error('password')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="mb-3">
                         <label for="password_confirmation" class="form-label">Konfirmasi password</label>
-                        <input type="password" name="password_confirmation" id="password_confirmation"
-                               class="form-control" required>
+                        <div class="input-group">
+                            <input type="password" name="password_confirmation" id="password_confirmation" autocomplete="new-password"
+                                   class="form-control @error('password_confirmation') is-invalid @enderror" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password_confirmation"
+                                    aria-label="Tampilkan password" title="Tampilkan password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">Daftar</button>
@@ -74,4 +86,22 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('.toggle-password').forEach(function (tombol) {
+        tombol.addEventListener('click', function () {
+            const input = document.getElementById(tombol.dataset.target);
+            const ikon = tombol.querySelector('i');
+            const akanTampil = input.type === 'password';
+
+            input.type = akanTampil ? 'text' : 'password';
+            ikon.classList.toggle('bi-eye', !akanTampil);
+            ikon.classList.toggle('bi-eye-slash', akanTampil);
+
+            const teks = akanTampil ? 'Sembunyikan password' : 'Tampilkan password';
+            tombol.setAttribute('aria-label', teks);
+            tombol.title = teks;
+        });
+    });
+</script>
 @endsection

@@ -22,10 +22,16 @@
 
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
-                        <input type="password" name="password" id="password"
-                               class="form-control @error('password') is-invalid @enderror" required>
+                        <div class="input-group">
+                            <input type="password" name="password" id="password" autocomplete="current-password"
+                                class="form-control @error('password') is-invalid @enderror" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password"
+                                    aria-label="Tampilkan password" title="Tampilkan password">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                         @error('password')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -44,4 +50,22 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('.toggle-password').forEach(function (tombol) {
+        tombol.addEventListener('click', function () {
+            const input = document.getElementById(tombol.dataset.target);
+            const ikon = tombol.querySelector('i');
+            const akanTampil = input.type === 'password';
+
+            input.type = akanTampil ? 'text' : 'password';
+            ikon.classList.toggle('bi-eye', !akanTampil);
+            ikon.classList.toggle('bi-eye-slash', akanTampil);
+
+            const teks = akanTampil ? 'Sembunyikan password' : 'Tampilkan password';
+            tombol.setAttribute('aria-label', teks);
+            tombol.title = teks;
+        });
+    });
+</script>
 @endsection
