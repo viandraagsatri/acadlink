@@ -25,6 +25,14 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
+            $user = Auth::user();
+
+            if ($user->role === 'dosen') {
+                return redirect()->route('dosen.jadwal.index');
+            } elseif ($user->role === 'mahasiswa') {
+                return redirect()->route('mahasiswa.dashboard');
+            }
+
             return redirect()->intended(route('home'));
         }
 
@@ -52,6 +60,12 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        if ($user->role === 'dosen') {
+            return redirect()->route('dosen.jadwal.index');
+        } elseif ($user->role === 'mahasiswa') {
+            return redirect()->route('mahasiswa.dashboard');
+        }
 
         return redirect()->route('home');
     }

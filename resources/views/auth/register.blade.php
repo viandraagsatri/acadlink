@@ -31,6 +31,36 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="nim_nip" class="form-label text-muted small fw-semibold">NIM / NIP</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-card-text text-muted"></i></span>
+                                <input id="nim_nip" type="text" class="form-control bg-light border-start-0 @error('nim_nip') is-invalid @enderror" name="nim_nip" value="{{ old('nim_nip') }}" required placeholder="Masukkan NIM atau NIP Anda">
+                            </div>
+                            @error('nim_nip')
+                                <span class="invalid-feedback d-block" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="role" class="form-label text-muted small fw-semibold">Pilih Peran</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-badge text-muted"></i></span>
+                                <select id="role" class="form-select bg-light border-start-0 @error('role') is-invalid @enderror" name="role" required>
+                                    <option value="" disabled selected>Pilih peran Anda</option>
+                                    <option value="mahasiswa" {{ old('role') == 'mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
+                                    <option value="dosen" {{ old('role') == 'dosen' ? 'selected' : '' }}>Dosen</option>
+                                </select>
+                            </div>
+                            @error('role')
+                                <span class="invalid-feedback d-block" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
                             <label for="email" class="form-label text-muted small fw-semibold">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
@@ -87,7 +117,6 @@
     </div>
 </div>
 
-<!-- SCRIPT TOGGLE PASSWORD -->
 <script>
     document.querySelectorAll('.toggle-password').forEach(function (tombol) {
         tombol.addEventListener('click', function () {

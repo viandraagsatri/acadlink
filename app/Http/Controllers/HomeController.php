@@ -14,7 +14,11 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        if ($user && $user->isDosen()) {
+        if (!$user) {
+            return view('home');
+        }
+
+        if (method_exists($user, 'isDosen') && $user->isDosen()) {
             $jadwalAktifCount = JadwalKonsultasi::where('dosen_id', $user->id)
                 ->where('status', 'aktif')
                 ->count();
@@ -47,6 +51,41 @@ class HomeController extends Controller
                 'pertemuanSelesaiCount',
                 'jadwalMendatang',
                 'pertemuanTerbaru'
+            ));
+        }
+
+        if ((method_exists($user, 'isMahasiswa') && $user->isMahasiswa()) || (isset($user->role) && $user->role === 'mahasiswa')) {
+            $pertemuanMenungguCount = PertemuanBimbingan::where('mahasiswa_id', $user->id)
+                ->where('status', 'menunggu')
+                ->count();
+
+            $pertemuanDisetujuiCount = PertemuanBimbingan::where('mahasiswa_id', $user->id)
+                ->where('status', 'disetujui')
+                ->count();
+
+            $pertemuanSelesaiCount = PertemuanBimbingan::where('mahasiswa_id', $user->id)
+                ->where('status', 'selesai')
+                ->count();
+
+            $pertemuanTerbaru = PertemuanBimbingan::where('mahasiswa_id', $user->id)
+                ->with(['dosen'])
+                ->orderBy('id', 'desc')
+                ->take(5)
+                ->get();
+
+            $jadwalMendatang = PertemuanBimbingan::where('mahasiswa_id', $user->id)
+                ->where('status', 'disetujui')
+                ->whereDate('tanggal', '>=', Carbon::today()->toDateString())
+                ->orderBy('tanggal', 'asc')
+                ->take(3)
+                ->get();
+
+            return view('home', compact(
+                'pertemuanMenungguCount',
+                'pertemuanDisetujuiCount',
+                'pertemuanSelesaiCount',
+                'pertemuanTerbaru',
+                'jadwalMendatang'
             ));
         }
 

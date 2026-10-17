@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Dosen\JadwalKonsultasiController;
 use App\Http\Controllers\Dosen\PertemuanBimbinganController;
+use App\Http\Controllers\MahasiswaBimbinganController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,4 +36,12 @@ Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->grou
     Route::post('/pertemuan/{id}/revisi', [PertemuanBimbinganController::class, 'tambahRevisi'])->name('pertemuan.revisi.store');
     Route::put('/revisi/{id}', [PertemuanBimbinganController::class, 'updateRevisi'])->name('pertemuan.revisi.update');
     Route::delete('/revisi/{id}', [PertemuanBimbinganController::class, 'hapusRevisi'])->name('pertemuan.revisi.destroy');
+});
+
+Route::middleware(['auth', 'role:mahasiswa'])->prefix('mahasiswa')->name('mahasiswa.')->group(function () {
+    Route::get('/dashboard', [MahasiswaBimbinganController::class, 'dashboard'])->name('dashboard');
+    Route::get('/jadwal', [MahasiswaBimbinganController::class, 'jadwal'])->name('jadwal');
+    Route::get('/riwayat', [MahasiswaBimbinganController::class, 'riwayat'])->name('riwayat');
+    Route::get('/revisi', [MahasiswaBimbinganController::class, 'revisi'])->name('revisi');
+    Route::post('/revisi/{id}/update', [MahasiswaBimbinganController::class, 'updateRevisiProgress'])->name('revisi.update');
 });
