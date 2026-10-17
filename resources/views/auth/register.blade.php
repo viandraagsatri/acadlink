@@ -1,92 +1,93 @@
 @extends('layouts.app')
 
-@section('title', 'Register')
-
 @section('content')
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
-                <h1 class="h4 mb-3">Register</h1>
-
-                <form method="POST" action="{{ route('register') }}">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nama lengkap</label>
-                        <input type="text" name="name" id="name" value="{{ old('name') }}"
-                               class="form-control @error('name') is-invalid @enderror" required autofocus>
-                        @error('name')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="nim_nip" class="form-label">NIM / NIP</label>
-                        <input type="text" name="nim_nip" id="nim_nip" value="{{ old('nim_nip') }}"
-                               class="form-control @error('nim_nip') is-invalid @enderror" required>
-                        @error('nim_nip')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" name="email" id="email" value="{{ old('email') }}"
-                               class="form-control @error('email') is-invalid @enderror" required>
-                        @error('email')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Daftar sebagai</label>
-                        <select name="role" id="role" class="form-select @error('role') is-invalid @enderror" required>
-                            <option value="mahasiswa" @selected(old('role') === 'mahasiswa')>Mahasiswa</option>
-                            <option value="dosen" @selected(old('role') === 'dosen')>Dosen</option>
-                        </select>
-                        @error('role')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <div class="input-group">
-                            <input type="password" name="password" id="password" autocomplete="new-password"
-                                   class="form-control @error('password') is-invalid @enderror" required>
-                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password"
-                                    aria-label="Tampilkan password" title="Tampilkan password">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
-                        @error('password')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password_confirmation" class="form-label">Konfirmasi password</label>
-                        <div class="input-group">
-                            <input type="password" name="password_confirmation" id="password_confirmation" autocomplete="new-password"
-                                   class="form-control @error('password_confirmation') is-invalid @enderror" required>
-                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password_confirmation"
-                                    aria-label="Tampilkan password" title="Tampilkan password">
-                                <i class="bi bi-eye"></i>
-                            </button>
+<div class="container py-5">
+    <div class="row justify-content-center align-items-center" style="min-height: 75vh;">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 p-4 bg-white">
+                <div class="card-body">
+                    
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold text-dark mb-2">Welcome to AcadLink</h4>
+                        <div class="d-inline-flex align-items-center justify-content-center bg-light text-purple rounded-circle p-3 mb-1 shadow-sm" style="width: 70px; height: 70px;">
+                            <i class="bi bi-mortarboard-fill fs-1 text-purple"></i>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">Daftar</button>
-                </form>
+                    <form method="POST" action="{{ route('register') }}">
+                        @csrf
 
-                <p class="text-center mt-3 mb-0 small">
-                    Sudah punya akun? <a href="{{ route('login') }}">Login</a>
-                </p>
+                        <div class="mb-3">
+                            <label for="name" class="form-label text-muted small fw-semibold">Nama Lengkap</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+                                <input id="name" type="text" class="form-control bg-light border-start-0 @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required autocomplete="name" autofocus placeholder="Nama lengkap Anda">
+                            </div>
+                            @error('name')
+                                <span class="invalid-feedback d-block" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label text-muted small fw-semibold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                                <input id="email" type="email" class="form-control bg-light border-start-0 @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" placeholder="Email Anda">
+                            </div>
+                            @error('email')
+                                <span class="invalid-feedback d-block" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label text-muted small fw-semibold">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                                <input id="password" type="password" class="form-control bg-light border-start-0 border-end-0 @error('password') is-invalid @enderror" name="password" required autocomplete="new-password" placeholder="Password Anda">
+                                <button class="btn btn-light border border-start-0 text-muted toggle-password" type="button" data-target="password" aria-label="Tampilkan password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            @error('password')
+                                <span class="invalid-feedback d-block" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password-confirm" class="form-label text-muted small fw-semibold">Konfirmasi Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock-fill text-muted"></i></span>
+                                <input id="password-confirm" type="password" class="form-control bg-light border-start-0 border-end-0" name="password_confirmation" required autocomplete="new-password" placeholder="Konfirmasi Password Anda">
+                                <button class="btn btn-light border border-start-0 text-muted toggle-password" type="button" data-target="password-confirm" aria-label="Tampilkan password">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold shadow-sm">
+                                Daftar
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <p class="small text-muted">Sudah punya akun? <a href="{{ route('login') }}" class="text-decoration-none fw-semibold text-purple">Masuk di sini</a></p>
+                        </div>
+
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- SCRIPT TOGGLE PASSWORD -->
 <script>
     document.querySelectorAll('.toggle-password').forEach(function (tombol) {
         tombol.addEventListener('click', function () {
