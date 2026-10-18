@@ -57,14 +57,34 @@ class User extends Authenticatable
         return $this->hasMany(PertemuanBimbingan::class, 'mahasiswa_id');
     }
 
-    public function dosenPembimbing()
+    public function dosenPA()
     {
-        return $this->belongsTo(User::class, 'dosen_pembimbing_id');
+        return $this->belongsTo(User::class, 'dosen_pa_id');
     }
 
-    public function anakBimbingan()
+    public function dosenSkripsi()
     {
-        return $this->hasMany(User::class, 'dosen_pembimbing_id');
+        return $this->belongsTo(User::class, 'dosen_skripsi_id');
+    }
+
+    public function dosenKP()
+    {
+        return $this->belongsTo(User::class, 'dosen_kp_id');
+    }
+
+    public function anakBimbinganPA()
+    {
+        return $this->hasMany(User::class, 'dosen_pa_id');
+    }
+
+    public function anakBimbinganSkripsi()
+    {
+        return $this->hasMany(User::class, 'dosen_skripsi_id');
+    }
+
+    public function anakBimbinganKP()
+    {
+        return $this->hasMany(User::class, 'dosen_kp_id');
     }
 
     public function riwayatPengajuanMahasiswa()

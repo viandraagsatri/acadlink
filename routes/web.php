@@ -49,4 +49,6 @@ Route::middleware(['auth', 'role:mahasiswa'])->prefix('mahasiswa')->name('mahasi
     Route::get('/bimbingan/{id}/edit', [MahasiswaBimbinganController::class, 'edit'])->name('bimbingan.edit');
     Route::put('/bimbingan/{id}', [MahasiswaBimbinganController::class, 'update'])->name('bimbingan.update');
     Route::delete('/bimbingan/{id}', [MahasiswaBimbinganController::class, 'destroy'])->name('bimbingan.destroy');
+    Route::get('/bimbingan/{id}/chat', [MahasiswaBimbinganController::class, 'chat'])->name('bimbingan.chat');
+    Route::post('/bimbingan/{id}/chat', [MahasiswaBimbinganController::class, 'kirimPesan'])->name('bimbingan.kirim-pesan');
 });

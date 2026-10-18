@@ -20,7 +20,9 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
-            $table->foreignId('dosen_pembimbing_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('dosen_pa_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('dosen_skripsi_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('dosen_kp_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
 

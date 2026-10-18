@@ -16,33 +16,29 @@
             <form action="{{ route('mahasiswa.bimbingan.store') }}" method="POST">
                 @csrf
                 
-                <div class="mb-3">
-                    <label class="form-label fw-semibold" style="font-size: 0.9rem;">Dosen Pembimbing</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white text-muted border-end-0">
-                            <i class="bi bi-person-badge"></i>
-                        </span>
-                        <input type="text" class="form-control border-start-0 ps-0 text-muted" 
-                               value="{{ auth()->user()->dosenPembimbing->name ?? 'Belum ada dosen pembimbing' }}" readonly>
-                    </div>
-                    <!-- input hidden ini yang dikirim ke db -->
-                    <input type="hidden" name="dosen_id" value="{{ auth()->user()->dosen_pembimbing_id }}">
-                </div>
-
                 <!-- jenis bimbingan -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold" style="font-size: 0.9rem;">Jenis Bimbingan</label>
                     <div class="input-group">
-                        <span class="input-group-text bg-white text-muted border-end-0">
-                            <i class="bi bi-card-list"></i>
-                        </span>
-                        <select class="form-select border-start-0 ps-0" name="jenis_bimbingan" required>
+                        <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-card-list"></i></span>
+                        <select class="form-select border-start-0 ps-0" name="jenis_bimbingan" id="jenis_bimbingan_select" required>
                             <option value="" disabled selected>Pilih Jenis Bimbingan</option>
                             <option value="PA">Pembimbing Akademik (PA)</option>
                             <option value="skripsi">Skripsi</option>
                             <option value="KP">Kerja Praktik (KP)</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- dospem -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size: 0.9rem;">Dosen Pembimbing</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-person-badge"></i></span>
+                        <input type="text" id="nama_dosen_tampil" class="form-control border-start-0 ps-0 text-muted" 
+                               value="Silakan pilih jenis bimbingan dahulu" readonly>
+                    </div>
+                    <input type="hidden" name="dosen_id" id="id_dosen_hidden" value="">
                 </div>
 
                 <!-- topik -->
@@ -71,9 +67,16 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn w-100 text-white" style="background-color: #8E65B7; border-radius: 0.5rem; padding: 10px 0;">
-                    Ajukan Sekarang
-                </button>
+                <div class="d-flex gap-3 mt-4">
+                    <a href="{{ url('/mahasiswa/jadwal') }}" class="btn btn-outline-secondary w-50" style="border-radius: 0.5rem; padding: 10px 0;">
+                        Batalkan
+                    </a>
+                    
+                    <button type="submit" class="btn w-100 text-white" style="background-color: #8E65B7; border-radius: 0.5rem; padding: 10px 0;">
+                        Ajukan Sekarang
+                    </button>
+                </div>
+                
             </form>
 
         </div>
@@ -98,4 +101,41 @@
         cursor: not-allowed;
     }
 </style>
+
+<script>
+    //ambil data dosen dari db then simpan ke variabel js
+    const dataDosen = {
+        PA: {
+            id: "{{ auth()->user()->dosen_pa_id }}",
+            nama: "{{ auth()->user()->dosenPA->name ?? 'Belum ada Dosen PA' }}"
+        },
+        skripsi: {
+            id: "{{ auth()->user()->dosen_skripsi_id }}",
+            nama: "{{ auth()->user()->dosenSkripsi->name ?? 'Belum ada Dosen Skripsi' }}"
+        },
+        KP: {
+            id: "{{ auth()->user()->dosen_kp_id }}",
+            nama: "{{ auth()->user()->dosenKP->name ?? 'Belum ada Dosen KP' }}"
+        }
+    };
+
+    //tangkap elemen html-nya
+    const selectJenis = document.getElementById('jenis_bimbingan_select');
+    const inputNamaDosen = document.getElementById('nama_dosen_tampil');
+    const inputIdDosen = document.getElementById('id_dosen_hidden');
+
+    //buat perintah: "setiap kali dropdown berubah, jalankan fungsi ini"
+    selectJenis.addEventListener('change', function() {
+        const pilihan = this.value;
+        
+        //cek apakah mhs punya dosen di jenis tersebut (idnya ga kosong)
+        if (dataDosen[pilihan].id) {
+            inputNamaDosen.value = dataDosen[pilihan].nama;
+            inputIdDosen.value = dataDosen[pilihan].id;
+        } else {
+            inputNamaDosen.value = "Dosen belum ditentukan oleh admin";
+            inputIdDosen.value = "";
+        }
+    });
+</script>
 @endsection
