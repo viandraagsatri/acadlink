@@ -9,10 +9,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MahasiswaBimbinganController;
 use Illuminate\Support\Facades\Route;
 
-// BERANDA
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// AUTENTIKASI
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])
         ->name('login');
@@ -25,20 +23,15 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// LOGOUT
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
-// ==================================================
-// MODUL DOSEN
-// ==================================================
 Route::middleware(['auth', 'role:dosen'])
     ->prefix('dosen')
     ->name('dosen.')
     ->group(function () {
 
-        // JADWAL KONSULTASI
         Route::get('/jadwal', [JadwalKonsultasiController::class, 'index'])
             ->name('jadwal.index');
 
@@ -57,7 +50,6 @@ Route::middleware(['auth', 'role:dosen'])
         Route::delete('/jadwal/{id}', [JadwalKonsultasiController::class, 'destroy'])
             ->name('jadwal.destroy');
 
-        // PERTEMUAN DAN BIMBINGAN
         Route::get('/pertemuan', [PertemuanBimbinganController::class, 'index'])
             ->name('pertemuan.index');
 
@@ -82,7 +74,6 @@ Route::middleware(['auth', 'role:dosen'])
         Route::delete('/revisi/{id}', [PertemuanBimbinganController::class, 'hapusRevisi'])
             ->name('pertemuan.revisi.destroy');
 
-        // PENGAJUAN DAN PERSETUJUAN BIMBINGAN — ORANG 4
         Route::get('/pengajuan', [PengajuanBimbinganController::class, 'index'])
             ->name('pengajuan.index');
 
@@ -101,7 +92,6 @@ Route::middleware(['auth', 'role:dosen'])
         Route::post('/pengajuan/{id}/selesai', [PengajuanBimbinganController::class, 'complete'])
             ->name('pengajuan.complete');
 
-        // KELOLA MAHASISWA BIMBINGAN
         Route::get('/mahasiswa-bimbingan', [
             DosenMahasiswaBimbinganController::class, 'index',
         ])->name('mahasiswa-bimbingan.index');
@@ -115,15 +105,11 @@ Route::middleware(['auth', 'role:dosen'])
         ])->name('mahasiswa-bimbingan.destroy');
     });
 
-// ==================================================
-// MODUL MAHASISWA
-// ==================================================
 Route::middleware(['auth', 'role:mahasiswa'])
     ->prefix('mahasiswa')
     ->name('mahasiswa.')
     ->group(function () {
 
-        // DASHBOARD, JADWAL, RIWAYAT, REVISI
         Route::get('/dashboard', [MahasiswaBimbinganController::class, 'dashboard'])
             ->name('dashboard');
 
@@ -133,6 +119,10 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/riwayat', [MahasiswaBimbinganController::class, 'riwayat'])
             ->name('riwayat');
 
+        Route::get('/riwayat/{id}', [MahasiswaBimbinganController::class, 'showRiwayat'])
+            ->whereNumber('id')
+            ->name('riwayat.show');
+
         Route::get('/revisi', [MahasiswaBimbinganController::class, 'revisi'])
             ->name('revisi');
 
@@ -140,7 +130,6 @@ Route::middleware(['auth', 'role:mahasiswa'])
             MahasiswaBimbinganController::class, 'updateRevisiProgress',
         ])->name('revisi.update');
 
-        // PENGAJUAN BIMBINGAN MAHASISWA
         Route::get('/bimbingan/create', [MahasiswaBimbinganController::class, 'create'])
             ->name('bimbingan.create');
 
@@ -156,7 +145,6 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::delete('/bimbingan/{id}', [MahasiswaBimbinganController::class, 'destroy'])
             ->name('bimbingan.destroy');
 
-        // CHAT BIMBINGAN
         Route::get('/bimbingan/{id}/chat', [MahasiswaBimbinganController::class, 'chat'])
             ->name('bimbingan.chat');
 

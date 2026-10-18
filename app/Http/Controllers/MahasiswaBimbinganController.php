@@ -2,34 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArahanRevisi;
 use App\Models\Bimbingan;
 use App\Models\PertemuanBimbingan;
 use App\Models\PesanChat;
-use App\Models\Revisi;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class MahasiswaBimbinganController extends Controller
 {
     public function dashboard()
     {
-        $mahasiswaId = Auth::id();
-
-        $jadwalMendatang = Bimbingan::where('mahasiswa_id', $mahasiswaId)
-            ->where('status', 'approved')
-            ->where('jadwal_bimbingan', '>=', now())
-            ->first();
-
-        $totalRevisiPending = Revisi::whereHas('bimbingan', function ($query) use ($mahasiswaId) {
-            $query->where('mahasiswa_id', $mahasiswaId);
-        })->where('status_revisi', 'pending')->count();
-
-        $totalSelesai = Bimbingan::where('mahasiswa_id', $mahasiswaId)
-            ->where('status', 'completed')
-            ->count();
-
-        return view('mahasiswa.dashboard', compact('jadwalMendatang', 'totalRevisiPending', 'totalSelesai'));
+        return redirect()->route('home');
     }
 
     public function jadwal()
@@ -46,7 +34,6 @@ class MahasiswaBimbinganController extends Controller
     public function create()
     {
         $user = Auth::user();
-        // cek udah punya dospem belum
         if (! $user->dosen_pa_id && ! $user->dosen_skripsi_id && ! $user->dosen_kp_id) {
             return back()->with('error', 'Anda belum memiliki dosen pembimbing sama sekali. Silakan hubungi admin.');
         }
@@ -74,12 +61,10 @@ class MahasiswaBimbinganController extends Controller
             $dosenYangBenar = $mahasiswa->dosen_kp_id;
         }
 
-        // validasi keamanan
         if ($request->dosen_id != $dosenYangBenar) {
             abort(403, 'Anda tidak diizinkan mengajukan bimbingan ke dosen ini.');
         }
 
-        // simpan data ke tabel bimbingan
         $bimbingan = Bimbingan::create([
             'mahasiswa_id' => $mahasiswa->id,
             'dosen_id' => $request->dosen_id,
@@ -114,7 +99,7 @@ class MahasiswaBimbinganController extends Controller
         return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan bimbingan berhasil dikirim!');
     }
 
-    public function edit($id) // nampilin form lama
+    public function edit($id)
     {
         $bimbingan = Bimbingan::where('id', $id)
             ->where('mahasiswa_id', auth()->id())
@@ -162,7 +147,7 @@ class MahasiswaBimbinganController extends Controller
         return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan berhasil diperbarui!');
     }
 
-    public function destroy($id) // hapus
+    public function destroy($id)
     {
         $bimbingan = Bimbingan::where('id', $id)
             ->where('mahasiswa_id', auth()->id())
@@ -181,7 +166,7 @@ class MahasiswaBimbinganController extends Controller
         return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan bimbingan berhasil dibatalkan.');
     }
 
-    public function chat($id) // nampilin room chat
+    public function chat($id)
     {
         $bimbingan = Bimbingan::with(['pesanChats.pengirim', 'dosen'])
             ->where('id', $id)
@@ -190,7 +175,7 @@ class MahasiswaBimbinganController extends Controller
 
         // chat cuma boleh dibuka klo statusnya approved
         if ($bimbingan->status !== 'approved') {
-            return redirect()->route('bimbingan.jadwal')->with('error', 'Ruang chat belum tersedia untuk pengajuan ini.');
+            return redirect()->route('mahasiswa.jadwal')->with('error', 'Ruang chat belum tersedia untuk pengajuan ini.');
         }
 
         return view('mahasiswa.chat-bimbingan', compact('bimbingan'));
@@ -219,53 +204,159 @@ class MahasiswaBimbinganController extends Controller
         return back();
     }
 
-    public function riwayat()
+    public function riwayat(Request $request)
     {
-        $riwayatList = Bimbingan::with(['dosen', 'revisis'])
-            ->where('mahasiswa_id', Auth::id())
-            ->whereIn('status', ['completed', 'rejected'])
-            ->latest()
+        $mahasiswaId = Auth::id();
+
+        $query = PertemuanBimbingan::where('mahasiswa_id', $mahasiswaId)
+            ->whereIn('status', ['selesai', 'ditolak'])
+            ->with(['dosen', 'arahanRevisis']);
+
+        $status = $request->query('status');
+        if (is_string($status) && in_array($status, ['selesai', 'ditolak'], true)) {
+            $query->where('status', $status);
+        }
+
+        $jenis = $request->query('jenis_bimbingan');
+        if (is_string($jenis) && in_array($jenis, ['akademik', 'skripsi', 'kerja_praktik'], true)) {
+            $query->where('jenis_bimbingan', $jenis);
+        }
+
+        $search = $request->query('search');
+        if (is_string($search) && trim($search) !== '') {
+            $keyword = '%'.mb_strtolower(trim($search)).'%';
+            $query->whereRaw('LOWER(judul_topik) LIKE ?', [$keyword]);
+        }
+
+        $riwayatList = $query->orderBy('tanggal', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        $selesaiCount = PertemuanBimbingan::where('mahasiswa_id', $mahasiswaId)->where('status', 'selesai')->count();
+        $ditolakCount = PertemuanBimbingan::where('mahasiswa_id', $mahasiswaId)->where('status', 'ditolak')->count();
+
+        return view('mahasiswa.riwayat', compact('riwayatList', 'selesaiCount', 'ditolakCount'));
+    }
+
+    public function showRiwayat($id)
+    {
+        $pertemuan = PertemuanBimbingan::where('mahasiswa_id', Auth::id())
+            ->with([
+                'dosen',
+                'arahanRevisis' => fn ($q) => $q->orderBy('tenggat_waktu')->orderBy('id'),
+            ])
+            ->find($id);
+
+        if (! $pertemuan) {
+            return redirect()->route('mahasiswa.riwayat')->with('error', 'Data bimbingan tidak ditemukan.');
+        }
+
+        $pertemuanSebelumnya = PertemuanBimbingan::where('mahasiswa_id', Auth::id())
+            ->where('dosen_id', $pertemuan->dosen_id)
+            ->where('id', '!=', $pertemuan->id)
+            ->where('status', 'selesai')
+            ->whereDate('tanggal', '<=', $pertemuan->tanggal->toDateString())
+            ->with('arahanRevisis')
+            ->orderBy('tanggal', 'desc')
             ->get();
 
-        return view('mahasiswa.riwayat', compact('riwayatList'));
+        return view('mahasiswa.riwayat-detail', compact('pertemuan', 'pertemuanSebelumnya'));
     }
 
     public function revisi()
     {
-        $mahasiswaId = Auth::id();
+        $revisis = $this->revisiMilikku()
+            ->with('pertemuanBimbingan.dosen')
+            ->get();
 
-        $revisiPending = Revisi::whereHas('bimbingan', function ($q) use ($mahasiswaId) {
-            $q->where('mahasiswa_id', $mahasiswaId);
-        })->where('status_revisi', 'pending')->get();
+        $revisiPending = $revisis
+            ->where('status', '!=', 'selesai')
+            ->sortBy(fn ($r) => [
+                $r->status === 'perlu_perbaikan' ? 0 : 1,
+                $r->tenggat_waktu?->timestamp ?? PHP_INT_MAX,
+            ])
+            ->values();
 
-        $revisiDone = Revisi::whereHas('bimbingan', function ($q) use ($mahasiswaId) {
-            $q->where('mahasiswa_id', $mahasiswaId);
-        })->where('status_revisi', 'done')->get();
+        $revisiDone = $revisis
+            ->where('status', 'selesai')
+            ->sortByDesc('updated_at')
+            ->values();
 
-        return view('mahasiswa.revisi', compact('revisiPending', 'revisiDone'));
+        $total = $revisis->count();
+        $jumlahSelesai = $revisiDone->count();
+        $progress = $total > 0 ? (int) round($jumlahSelesai / $total * 100) : 0;
+
+        return view('mahasiswa.revisi', compact('revisiPending', 'revisiDone', 'total', 'jumlahSelesai', 'progress'));
     }
 
     public function updateRevisiProgress(Request $request, $id)
     {
         $request->validate([
-            'catatan_mahasiswa' => 'required|string',
-            'file_progres' => 'nullable|file|mimes:pdf,docx,zip|max:5120',
+            'status' => ['required', 'in:belum_selesai,sedang_dikerjakan,selesai'],
+            'catatan_mahasiswa' => ['required_if:status,selesai', 'nullable', 'string', 'max:1000'],
+            'file_progres' => ['nullable', 'file', 'mimes:pdf,docx,zip', 'max:5120'],
+        ], [
+            'status.required' => 'Status pengerjaan revisi wajib dipilih.',
+            'status.in' => 'Status pengerjaan revisi tidak valid.',
+            'catatan_mahasiswa.required_if' => 'Tulis catatan singkat sebelum menandai revisi selesai.',
+            'catatan_mahasiswa.max' => 'Catatan maksimal 1000 karakter.',
+            'file_progres.mimes' => 'File progres harus berformat PDF, DOCX, atau ZIP.',
+            'file_progres.max' => 'Ukuran file progres maksimal 5 MB.',
         ]);
 
-        $revisi = Revisi::findOrFail($id);
+        $revisi = $this->revisiMilikku()->findOrFail($id);
 
-        $data = [
-            'catatan_mahasiswa' => $request->catatan_mahasiswa,
-            'status_revisi' => 'done',
-        ];
-
-        if ($request->hasFile('file_progres')) {
-            $path = $request->file('file_progres')->store('revisi_files', 'public');
-            $data['file_progres'] = $path;
+        if ($revisi->status === 'selesai') {
+            return back()->with('error', 'Progres revisi yang sudah selesai tidak dapat diperbarui.');
         }
 
-        $revisi->update($data);
+        $disk = Storage::disk('public');
+        $fileLama = $revisi->file_progres;
+        $fileBaru = null;
+
+        if ($request->hasFile('file_progres')) {
+            $fileBaru = $request->file('file_progres')->store('revisi_files', 'public');
+
+            if ($fileBaru === false) {
+                return back()->withInput()->with('error', 'File progres gagal disimpan. Perubahan progres tidak diterapkan.');
+            }
+
+            $revisi->file_progres = $fileBaru;
+        }
+
+        $revisi->status = $request->status;
+        $revisi->catatan_mahasiswa = $request->catatan_mahasiswa;
+
+        try {
+            $revisi->save();
+        } catch (\Throwable $exception) {
+            if ($fileBaru && ! $disk->delete($fileBaru)) {
+                Log::warning('Failed to clean up uploaded revision file after database update failed.', [
+                    'revisi_id' => $revisi->id,
+                    'file_progres' => $fileBaru,
+                ]);
+            }
+
+            throw $exception;
+        }
+
+        if ($fileBaru && $fileLama && ! $disk->delete($fileLama)) {
+            Log::warning('Failed to delete replaced revision progress file.', [
+                'revisi_id' => $revisi->id,
+                'file_progres' => $fileLama,
+            ]);
+
+            return back()->with('warning', 'Progres berhasil diperbarui, tetapi file progres lama gagal dihapus.');
+        }
 
         return redirect()->back()->with('success', 'Progress revisi berhasil diperbarui!');
+    }
+
+    private function revisiMilikku(): Builder
+    {
+        return ArahanRevisi::whereHas('pertemuanBimbingan', function ($q) {
+            $q->where('mahasiswa_id', Auth::id());
+        });
     }
 }

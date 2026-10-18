@@ -1,39 +1,47 @@
 @extends('layouts.app')
+@section('title', 'Revisi Saya')
 @section('content')
-<div class="container py-4">
-    <h3>Daftar Revisi</h3>
-    
-    <h5 class="mt-4 text-danger">Belum Selesai (Pending)</h5>
-    @forelse($revisiPending as $rev)
-        <div class="card mb-2 shadow-sm border-danger">
-            <div class="card-body">
-                <p>{{ $rev->deskripsi_revisi }}</p>
-                <form action="{{ route('mahasiswa.revisi.update', $rev->id) }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="mb-2">
-                        <textarea name="catatan_mahasiswa" class="form-control" placeholder="Tulis progres/tanggapan revisi..." required></textarea>
-                    </div>
-                    <div class="mb-2">
-                        <input type="file" name="file_progres" class="form-control form-control-sm">
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-primary">Tandai Selesai</button>
-                </form>
-            </div>
-        </div>
-    @empty
-        <p class="text-muted">Tidak ada revisi yang menggantung. Bagus!</p>
-    @endforelse
+<div class="mb-4">
+    <h1 class="h3 fw-bold mb-1">Daftar Revisi</h1>
+    <p class="text-muted mb-0">Arahan revisi dari dosen pembimbing beserta progres pengerjaannya.</p>
+</div>
 
-    <h5 class="mt-5 text-success">Sudah Selesai (Done)</h5>
-    @forelse($revisiDone as $rev)
-        <div class="card mb-2 shadow-sm border-success bg-light">
-            <div class="card-body">
-                <p class="mb-1"><s>{{ $rev->deskripsi_revisi }}</s></p>
-                <small class="text-muted">Progres Kamu: {{ $rev->catatan_mahasiswa }}</small>
-            </div>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-semibold">Progres Revisi</span>
+            <span class="small text-muted">{{ $jumlahSelesai }} dari {{ $total }} revisi selesai ({{ $progress }}%)</span>
         </div>
-    @empty
-        <p class="text-muted">Belum ada revisi yang diselesaikan.</p>
-    @endforelse
+        <div class="progress" role="progressbar" aria-valuenow="{{ $progress }}" aria-valuemin="0" aria-valuemax="100" style="height: 10px;">
+            <div class="progress-bar" style="width: {{ $progress }}%; background-color: var(--lilac-dark);"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <h2 class="h6 fw-bold text-uppercase text-muted mb-3">
+            Belum Selesai <span class="badge bg-danger ms-1">{{ $revisiPending->count() }}</span>
+        </h2>
+        @forelse ($revisiPending as $revisi)
+            @include('mahasiswa.revisi-item', ['revisi' => $revisi])
+        @empty
+            <div class="card p-4 text-center text-muted">
+                <div class="fs-1"><i class="bi bi-emoji-smile"></i></div>
+                <div class="fw-semibold">Tidak ada revisi yang menggantung. Bagus!</div>
+            </div>
+        @endforelse
+    </div>
+
+    <div class="col-lg-5">
+        <h2 class="h6 fw-bold text-uppercase text-muted mb-3">
+            Sudah Selesai <span class="badge bg-success ms-1">{{ $revisiDone->count() }}</span>
+        </h2>
+        @forelse ($revisiDone as $revisi)
+            @include('mahasiswa.revisi-item', ['revisi' => $revisi])
+        @empty
+            <div class="card p-4 text-center text-muted small">Belum ada revisi yang diselesaikan.</div>
+        @endforelse
+    </div>
 </div>
 @endsection
