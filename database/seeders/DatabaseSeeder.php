@@ -36,6 +36,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'mahasiswa1@acadlink.test',
             'role' => 'mahasiswa',
             'password' => Hash::make('password'),
+            'dosen_pa_id' => $dosen2->id,
+            'dosen_skripsi_id' => $dosen1->id,
+            'dosen_kp_id' => $dosen1->id,
         ]);
 
         $mhs2 = User::create([
@@ -44,6 +47,20 @@ class DatabaseSeeder extends Seeder
             'email' => 'mahasiswa2@acadlink.test',
             'role' => 'mahasiswa',
             'password' => Hash::make('password'),
+            'dosen_pa_id' => $dosen1->id,
+            'dosen_skripsi_id' => $dosen2->id,
+            'dosen_kp_id' => $dosen2->id,
+        ]);
+
+        $mhs3 = User::create([
+            'name' => 'Annisa Azzahra',
+            'nim_nip' => '2417051059',
+            'email' => 'mahasiswa3@acadlink.test',
+            'role' => 'mahasiswa',
+            'password' => Hash::make('password'),
+            'dosen_pa_id' => $dosen1->id,
+            'dosen_skripsi_id' => $dosen1->id,
+            'dosen_kp_id' => $dosen2->id,
         ]);
 
         $jadwal1 = JadwalKonsultasi::create([

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bimbingan;
+use App\Models\PesanChat;
 use App\Models\Revisi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,9 +43,10 @@ class MahasiswaBimbinganController extends Controller
 
     public function create()
     {
+        $user = Auth::user();
         //cek udah punya dospem belum
-        if (!Auth::user()->dosen_pembimbing_id) {
-            return back()->with('error', 'Anda belum memiliki dosen pembimbing.');
+        if (!$user->dosen_pa_id && !$user->dosen_skripsi_id && !$user->dosen_kp_id) {
+            return back()->with('error', 'Anda belum memiliki dosen pembimbing sama sekali. Silakan hubungi admin.');
         }
 
         return view('mahasiswa.form-bimbingan');
@@ -61,11 +63,21 @@ class MahasiswaBimbinganController extends Controller
             'jadwal_bimbingan' => 'nullable|date'
         ]);
 
-        if ($request->dosen_id != $mahasiswa->dosen_pembimbing_id) {
+        $dosenYangBenar = null;
+        if ($request->jenis_bimbingan == 'PA') {
+            $dosenYangBenar = $mahasiswa->dosen_pa_id;
+        } elseif ($request->jenis_bimbingan == 'skripsi') {
+            $dosenYangBenar = $mahasiswa->dosen_skripsi_id;
+        } elseif ($request->jenis_bimbingan == 'KP') {
+            $dosenYangBenar = $mahasiswa->dosen_kp_id;
+        }
+
+        //validasi keamanan
+        if ($request->dosen_id != $dosenYangBenar) {
             abort(403, 'Anda tidak diizinkan mengajukan bimbingan ke dosen ini.');
         }
 
-        // simpan data ke tabel bimbingan
+        //simpan data ke tabel bimbingan
         Bimbingan::create([
             'mahasiswa_id' => $mahasiswa->id,
             'dosen_id' => $request->dosen_id,
@@ -91,25 +103,24 @@ class MahasiswaBimbinganController extends Controller
         return view('mahasiswa.edit-form-bimbingan', compact('bimbingan'));
     }
 
-    public function update(Request $request, $id) //simpen perubahan ke db
+    public function update(Request $request, $id) 
     {
+        $mahasiswa = Auth::user();
+
         $bimbingan = Bimbingan::where('id', $id)
-            ->where('mahasiswa_id', auth()->id())
+            ->where('mahasiswa_id', $mahasiswa->id)
             ->firstOrFail();
 
         if ($bimbingan->status !== 'pending') {
-            return redirect()->route('mahasiswa.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
+            return redirect()->route('bimbingan.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
         }
 
         $request->validate([
-            'jenis_bimbingan' => 'required|in:PA,skripsi,KP',
             'topik_pembahasan' => 'required|string|max:255',
             'jadwal_bimbingan' => 'nullable|date'
         ]);
 
-        //update data
         $bimbingan->update([
-            'jenis_bimbingan' => $request->jenis_bimbingan,
             'topik_pembahasan' => $request->topik_pembahasan,
             'jadwal_bimbingan' => $request->jadwal_bimbingan,
         ]);
@@ -130,6 +141,44 @@ class MahasiswaBimbinganController extends Controller
         $bimbingan->delete();
 
         return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan bimbingan berhasil dibatalkan.');
+    }
+
+    public function chat($id) //nampilin room chat
+    {
+        $bimbingan = Bimbingan::with(['pesanChats.pengirim', 'dosen'])
+            ->where('id', $id)
+            ->where('mahasiswa_id', Auth::id())
+            ->firstOrFail();
+
+        // chat cuma boleh dibuka klo statusnya approved
+        if ($bimbingan->status !== 'approved') {
+            return redirect()->route('bimbingan.jadwal')->with('error', 'Ruang chat belum tersedia untuk pengajuan ini.');
+        }
+
+        return view('mahasiswa.chat-bimbingan', compact('bimbingan'));
+    }
+
+    public function kirimPesan(Request $request, $id)
+    {
+        $bimbingan = Bimbingan::where('id', $id)
+            ->where('mahasiswa_id', Auth::id())
+            ->firstOrFail();
+
+        if ($bimbingan->status !== 'approved') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $request->validate([
+            'pesan' => 'required|string'
+        ]);
+
+        PesanChat::create([
+            'bimbingan_id' => $bimbingan->id,
+            'pengirim_id' => Auth::id(), 
+            'pesan' => $request->pesan
+        ]);
+
+        return back();
     }
 
     public function riwayat()
