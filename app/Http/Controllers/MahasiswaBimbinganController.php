@@ -33,11 +33,103 @@ class MahasiswaBimbinganController extends Controller
     {
         $jadwalList = Bimbingan::with('dosen')
             ->where('mahasiswa_id', Auth::id())
-            ->where('status', 'approved')
-            ->orderBy('jadwal_bimbingan', 'asc')
+            ->whereIn('status', ['approved', 'pending'])
+            ->orderBy('jadwal_bimbingan', 'desc')
             ->get();
 
         return view('mahasiswa.jadwal', compact('jadwalList'));
+    }
+
+    public function create()
+    {
+        //cek udah punya dospem belum
+        if (!Auth::user()->dosen_pembimbing_id) {
+            return back()->with('error', 'Anda belum memiliki dosen pembimbing.');
+        }
+
+        return view('mahasiswa.form-bimbingan');
+    }
+
+    public function store(Request $request)
+    {
+        $mahasiswa = Auth::user();
+
+        $request->validate([
+            'jenis_bimbingan' => 'required|in:PA,skripsi,KP',
+            'topik_pembahasan' => 'required|string|max:255',
+            'dosen_id' => 'required|exists:users,id',
+            'jadwal_bimbingan' => 'nullable|date'
+        ]);
+
+        if ($request->dosen_id != $mahasiswa->dosen_pembimbing_id) {
+            abort(403, 'Anda tidak diizinkan mengajukan bimbingan ke dosen ini.');
+        }
+
+        // simpan data ke tabel bimbingan
+        Bimbingan::create([
+            'mahasiswa_id' => $mahasiswa->id,
+            'dosen_id' => $request->dosen_id,
+            'jenis_bimbingan' => $request->jenis_bimbingan,
+            'topik_pembahasan' => $request->topik_pembahasan,
+            'jadwal_bimbingan' => $request->jadwal_bimbingan,
+            'status' => 'pending', 
+        ]);
+
+        return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan bimbingan berhasil dikirim!');
+    }
+
+    public function edit($id) //nampilin form lama
+    {
+        $bimbingan = Bimbingan::where('id', $id)
+            ->where('mahasiswa_id', auth()->id())
+            ->firstOrFail();
+
+        if ($bimbingan->status !== 'pending') {
+            return redirect()->route('mahasiswa.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
+        }
+
+        return view('mahasiswa.edit-form-bimbingan', compact('bimbingan'));
+    }
+
+    public function update(Request $request, $id) //simpen perubahan ke db
+    {
+        $bimbingan = Bimbingan::where('id', $id)
+            ->where('mahasiswa_id', auth()->id())
+            ->firstOrFail();
+
+        if ($bimbingan->status !== 'pending') {
+            return redirect()->route('mahasiswa.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
+        }
+
+        $request->validate([
+            'jenis_bimbingan' => 'required|in:PA,skripsi,KP',
+            'topik_pembahasan' => 'required|string|max:255',
+            'jadwal_bimbingan' => 'nullable|date'
+        ]);
+
+        //update data
+        $bimbingan->update([
+            'jenis_bimbingan' => $request->jenis_bimbingan,
+            'topik_pembahasan' => $request->topik_pembahasan,
+            'jadwal_bimbingan' => $request->jadwal_bimbingan,
+        ]);
+
+        return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan berhasil diperbarui!');
+    }
+
+    public function destroy($id) //hapus
+    {
+        $bimbingan = Bimbingan::where('id', $id)
+            ->where('mahasiswa_id', auth()->id())
+            ->firstOrFail();
+
+        if ($bimbingan->status !== 'pending') {
+            return redirect()->route('mahasiswa.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat dibatalkan.');
+        }
+
+        $bimbingan->delete();
+
+        return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan bimbingan berhasil dibatalkan.');
     }
 
     public function riwayat()

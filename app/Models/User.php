@@ -56,4 +56,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(PertemuanBimbingan::class, 'mahasiswa_id');
     }
+
+    public function dosenPembimbing()
+    {
+        return $this->belongsTo(User::class, 'dosen_pembimbing_id');
+    }
+
+    public function anakBimbingan()
+    {
+        return $this->hasMany(User::class, 'dosen_pembimbing_id');
+    }
+
+    public function riwayatPengajuanMahasiswa()
+    {
+        return $this->hasMany(Bimbingan::class, 'mahasiswa_id');
+    }
+
+    public function riwayatPengajuanDosen()
+    {
+        return $this->hasMany(Bimbingan::class, 'dosen_id');
+    }
 }

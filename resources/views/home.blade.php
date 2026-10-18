@@ -418,7 +418,7 @@
 
             <div class="d-flex flex-wrap gap-2">
                 {{-- Hubungkan ke route formulir pengajuan jika sudah tersedia --}}
-                <a href="#"
+                <a href="{{ route('mahasiswa.bimbingan.create') }}"
                    class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-circle me-1"></i>
                     Ajukan Bimbingan

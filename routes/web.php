@@ -74,4 +74,9 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/riwayat', [MahasiswaBimbinganController::class, 'riwayat'])->name('riwayat');
         Route::get('/revisi', [MahasiswaBimbinganController::class, 'revisi'])->name('revisi');
         Route::post('/revisi/{id}/update', [MahasiswaBimbinganController::class, 'updateRevisiProgress'])->name('revisi.update');
-    });
+        Route::get('/bimbingan/create', [MahasiswaBimbinganController::class, 'create'])->name('bimbingan.create');
+    Route::post('/bimbingan', [MahasiswaBimbinganController::class, 'store'])->name('bimbingan.store');
+    Route::get('/bimbingan/{id}/edit', [MahasiswaBimbinganController::class, 'edit'])->name('bimbingan.edit');
+    Route::put('/bimbingan/{id}', [MahasiswaBimbinganController::class, 'update'])->name('bimbingan.update');
+    Route::delete('/bimbingan/{id}', [MahasiswaBimbinganController::class, 'destroy'])->name('bimbingan.destroy');
+});
