@@ -15,6 +15,7 @@ class PertemuanBimbingan extends Model
     protected $table = 'pertemuan_bimbingans';
 
     protected $fillable = [
+        'bimbingan_id',
         'dosen_id',
         'mahasiswa_id',
         'jadwal_konsultasi_id',
@@ -40,6 +41,11 @@ class PertemuanBimbingan extends Model
         ];
     }
 
+    public function bimbingan(): BelongsTo
+    {
+        return $this->belongsTo(Bimbingan::class, 'bimbingan_id');
+    }
+
     public function dosen(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dosen_id');
@@ -52,12 +58,18 @@ class PertemuanBimbingan extends Model
 
     public function jadwalKonsultasi(): BelongsTo
     {
-        return $this->belongsTo(JadwalKonsultasi::class, 'jadwal_konsultasi_id');
+        return $this->belongsTo(
+            JadwalKonsultasi::class,
+            'jadwal_konsultasi_id'
+        );
     }
 
     public function arahanRevisis(): HasMany
     {
-        return $this->hasMany(ArahanRevisi::class, 'pertemuan_bimbingan_id');
+        return $this->hasMany(
+            ArahanRevisi::class,
+            'pertemuan_bimbingan_id'
+        );
     }
 
     public function getJenisBimbinganLabelAttribute(): string
@@ -66,7 +78,9 @@ class PertemuanBimbingan extends Model
             'skripsi' => 'Bimbingan Skripsi',
             'kerja_praktik' => 'Bimbingan Kerja Praktik',
             'akademik' => 'Bimbingan Akademik (PA)',
-            default => ucfirst(str_replace('_', ' ', (string) $this->jenis_bimbingan)),
+            default => ucfirst(
+                str_replace('_', ' ', (string) $this->jenis_bimbingan)
+            ),
         };
     }
 
@@ -98,17 +112,23 @@ class PertemuanBimbingan extends Model
             'tatap_muka' => 'Tatap Muka Langsung',
             'online' => 'Online Meeting',
             'chat' => 'Diskusi Chat',
-            default => ucfirst(str_replace('_', ' ', (string) $this->metode)),
+            default => ucfirst(
+                str_replace('_', ' ', (string) $this->metode)
+            ),
         };
     }
 
     public function getJamMulaiFormatAttribute(): ?string
     {
-        return $this->jam_mulai ? Carbon::parse($this->jam_mulai)->format('H:i') : null;
+        return $this->jam_mulai
+            ? Carbon::parse($this->jam_mulai)->format('H:i')
+            : null;
     }
 
     public function getJamSelesaiFormatAttribute(): ?string
     {
-        return $this->jam_selesai ? Carbon::parse($this->jam_selesai)->format('H:i') : null;
+        return $this->jam_selesai
+            ? Carbon::parse($this->jam_selesai)->format('H:i')
+            : null;
     }
 }

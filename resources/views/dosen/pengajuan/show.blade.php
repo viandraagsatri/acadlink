@@ -166,16 +166,16 @@
                             {{ $pengajuan->lokasi_atau_link }}
                         </p>
 
-                        <form method="POST"
-                              action="{{ route('dosen.pengajuan.complete', $pengajuan->id) }}"
-                              class="mt-3">
-                            @csrf
-                            <button class="btn btn-success w-100"
-                                    onclick="return confirm('Tandai bimbingan ini selesai?')">
-                                <i class="bi bi-check2-all me-1"></i>
-                                Tandai Bimbingan Selesai
-                            </button>
-                        </form>
+                        <div class="mt-3 pt-3 border-top">
+                            @if ($pengajuan->pertemuan)
+                                <a href="{{ route('dosen.pertemuan.show', $pengajuan->pertemuan->id) }}" class="btn btn-outline-primary w-100 btn-sm">
+                                    <i class="bi bi-file-earmark-text me-1"></i> Buka Detail & Catatan Pertemuan
+                                </a>
+                                <small class="text-muted d-block mt-1 text-center" style="font-size: 0.8rem;">
+                                    Tanda selesai bimbingan dilakukan melalui menu Detail & Catatan Pertemuan.
+                                </small>
+                            @endif
+                        </div>
                     @endif
                 </div>
             </div>

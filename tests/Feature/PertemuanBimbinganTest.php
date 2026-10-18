@@ -160,4 +160,176 @@ class PertemuanBimbinganTest extends TestCase
         $responseDelete->assertSessionHas('success');
         $this->assertDatabaseCount('arahan_revisis', 0);
     }
+
+    public function test_index_does_not_show_approve_reject_or_detail_buttons_for_pending_or_rejected_meetings(): void
+    {
+        $dosen = User::factory()->create(['role' => 'dosen']);
+        $mahasiswa = User::factory()->create(['role' => 'mahasiswa']);
+
+        $pertemuanMenunggu = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Topik Menunggu',
+            'metode' => 'tatap_muka',
+            'tanggal' => Carbon::tomorrow()->toDateString(),
+            'status' => 'menunggu',
+        ]);
+
+        $pertemuanDitolak = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Topik Ditolak',
+            'metode' => 'tatap_muka',
+            'tanggal' => Carbon::tomorrow()->toDateString(),
+            'status' => 'ditolak',
+            'alasan_penolakan' => 'Ditolak',
+        ]);
+
+        $response = $this->actingAs($dosen)->get(route('dosen.pertemuan.index'));
+
+        $response->assertStatus(200);
+        // Memastikan tidak ada tombol Setujui / Tolak di halaman pertemuan
+        $response->assertDontSee('data-bs-target="#modalSetujui', false);
+        $response->assertDontSee('data-bs-target="#modalTolak', false);
+
+        // Memastikan pertemuan menunggu dan ditolak tidak memiliki tombol "Detail & Catatan"
+        $response->assertDontSee(route('dosen.pertemuan.show', $pertemuanMenunggu->id));
+        $response->assertDontSee(route('dosen.pertemuan.show', $pertemuanDitolak->id));
+    }
+
+    public function test_dosen_cannot_open_detail_and_notes_if_status_is_menunggu_or_ditolak(): void
+    {
+        $dosen = User::factory()->create(['role' => 'dosen']);
+        $mahasiswa = User::factory()->create(['role' => 'mahasiswa']);
+
+        $pertemuan = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Topik Menunggu',
+            'metode' => 'tatap_muka',
+            'tanggal' => Carbon::tomorrow()->toDateString(),
+            'status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($dosen)->get(route('dosen.pertemuan.show', $pertemuan->id));
+
+        $response->assertRedirect(route('dosen.pertemuan.index'));
+        $response->assertSessionHas('warning');
+    }
+
+    public function test_dosen_cannot_add_notes_if_status_is_not_disetujui(): void
+    {
+        $dosen = User::factory()->create(['role' => 'dosen']);
+        $mahasiswa = User::factory()->create(['role' => 'mahasiswa']);
+
+        $pertemuan = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Topik Menunggu',
+            'metode' => 'tatap_muka',
+            'tanggal' => Carbon::tomorrow()->toDateString(),
+            'status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($dosen)->put(route('dosen.pertemuan.catatan', $pertemuan->id), [
+            'catatan_hasil' => 'Catatan sebelum disetujui',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertNull($pertemuan->fresh()->catatan_hasil);
+    }
+
+    public function test_riwayat_sebelumnya_only_includes_prior_completed_meetings(): void
+    {
+        $dosen = User::factory()->create(['role' => 'dosen']);
+        $mahasiswa = User::factory()->create(['role' => 'mahasiswa']);
+
+        // Pertemuan saat ini di tanggal 18
+        $pertemuanSekarang = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Bimbingan Tanggal 18',
+            'metode' => 'tatap_muka',
+            'tanggal' => '2026-10-18',
+            'status' => 'disetujui',
+        ]);
+
+        // Pertemuan masa lalu (tanggal 15) yang sudah selesai
+        $pertemuanLalu = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Bimbingan Tanggal 15 Selesai',
+            'metode' => 'tatap_muka',
+            'tanggal' => '2026-10-15',
+            'status' => 'selesai',
+            'catatan_hasil' => 'Catatan tanggal 15',
+        ]);
+
+        // Pertemuan masa depan (tanggal 20)
+        $pertemuanMasaDepan = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Bimbingan Tanggal 20 Masa Depan',
+            'metode' => 'tatap_muka',
+            'tanggal' => '2026-10-20',
+            'status' => 'disetujui',
+        ]);
+
+        // Pertemuan ditolak (tanggal 16)
+        $pertemuanDitolak = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Bimbingan Tanggal 16 Ditolak',
+            'metode' => 'tatap_muka',
+            'tanggal' => '2026-10-16',
+            'status' => 'ditolak',
+        ]);
+
+        $response = $this->actingAs($dosen)->get(route('dosen.pertemuan.show', $pertemuanSekarang->id));
+
+        $response->assertStatus(200);
+        // Harus melihat riwayat yang tanggal 15 dan sudah selesai
+        $response->assertSee('Bimbingan Tanggal 15 Selesai');
+        // Tidak boleh melihat bimbingan tanggal 20 (masa depan) di riwayat terdahulu
+        $response->assertDontSee('Bimbingan Tanggal 20 Masa Depan');
+        // Tidak boleh melihat bimbingan yang ditolak
+        $response->assertDontSee('Bimbingan Tanggal 16 Ditolak');
+    }
+
+    public function test_dosen_can_mark_completed_via_button_in_detail_pertemuan(): void
+    {
+        $dosen = User::factory()->create(['role' => 'dosen']);
+        $mahasiswa = User::factory()->create(['role' => 'mahasiswa']);
+
+        $pertemuan = PertemuanBimbingan::create([
+            'dosen_id' => $dosen->id,
+            'mahasiswa_id' => $mahasiswa->id,
+            'jenis_bimbingan' => 'skripsi',
+            'judul_topik' => 'Uji Coba Tombol Selesai',
+            'metode' => 'tatap_muka',
+            'tanggal' => '2026-10-18',
+            'status' => 'disetujui',
+        ]);
+
+        $responseView = $this->actingAs($dosen)->get(route('dosen.pertemuan.show', $pertemuan->id));
+        $responseView->assertStatus(200);
+        $responseView->assertSee('Tandai Bimbingan Selesai');
+
+        $responseSubmit = $this->actingAs($dosen)->put(route('dosen.pertemuan.catatan', $pertemuan->id), [
+            'catatan_hasil' => 'Catatan hasil akhir',
+            'tandai_selesai' => '1',
+        ]);
+
+        $responseSubmit->assertSessionHas('success', 'Sesi pertemuan bimbingan berhasil ditandai selesai.');
+        $this->assertEquals('selesai', $pertemuan->fresh()->status);
+        $this->assertNotNull($pertemuan->fresh()->tanggal_bimbingan_selesai);
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Bimbingan extends Model
 {
@@ -32,5 +33,17 @@ class Bimbingan extends Model
     public function pesanChats(): HasMany
     {
         return $this->hasMany(PesanChat::class, 'bimbingan_id');
+    }
+
+    /**
+     * Relasi ke pertemuan bimbingan yang berasal
+     * dari pengajuan ini.
+     */
+    public function pertemuan(): HasOne
+    {
+        return $this->hasOne(
+            PertemuanBimbingan::class,
+            'bimbingan_id'
+        );
     }
 }

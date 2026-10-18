@@ -94,6 +94,19 @@
                         </div>
                     </div>
                 @endif
+
+                @if ($pertemuan->status === 'disetujui')
+                    <div class="mt-3 pt-3 border-top">
+                        <form action="{{ route('dosen.pertemuan.catatan', $pertemuan->id) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="tandai_selesai" value="1">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Tandai sesi pertemuan bimbingan ini selesai?')">
+                                <i class="bi bi-check2-all me-1"></i> Tandai Bimbingan Selesai
+                            </button>
+                        </form>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -134,30 +147,45 @@
                 @endif
             </div>
             <div class="card-body">
-                <form action="{{ route('dosen.pertemuan.catatan', $pertemuan->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
+                @if ($pertemuan->status === 'disetujui')
+                    <form action="{{ route('dosen.pertemuan.catatan', $pertemuan->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
 
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Catatan / Ringkasan Diskusi Bimbingan <span class="text-danger">*</span></label>
-                        <textarea name="catatan_hasil" rows="5" class="form-control @error('catatan_hasil') is-invalid @enderror" placeholder="Tuliskan poin pembahasan, temuan masalah, masukan dosen, dan saran solusi hasil bimbingan..." required>{{ old('catatan_hasil', $pertemuan->catatan_hasil) }}</textarea>
-                        @error('catatan_hasil')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="tandai_selesai" value="1" id="tandaiSelesai" {{ $pertemuan->status === 'selesai' ? 'checked' : '' }}>
-                            <label class="form-check-label small fw-semibold" for="tandaiSelesai">
-                                Tandai sesi pertemuan bimbingan ini selesai
-                            </label>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Catatan / Ringkasan Diskusi Bimbingan</label>
+                            <textarea name="catatan_hasil" rows="5" class="form-control @error('catatan_hasil') is-invalid @enderror" placeholder="Tuliskan poin pembahasan, temuan masalah, masukan dosen, dan saran solusi hasil bimbingan...">{{ old('catatan_hasil', $pertemuan->catatan_hasil) }}</textarea>
+                            @error('catatan_hasil')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm px-3">
-                            <i class="bi bi-save me-1"></i> Simpan Catatan Hasil
-                        </button>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <button type="submit" name="tandai_selesai" value="0" class="btn btn-outline-primary btn-sm px-3">
+                                <i class="bi bi-save me-1"></i> Simpan Catatan Hasil
+                            </button>
+                            <button type="submit" name="tandai_selesai" value="1" class="btn btn-success btn-sm px-3" onclick="return confirm('Tandai sesi pertemuan bimbingan ini selesai?')">
+                                <i class="bi bi-check2-all me-1"></i> Tandai Bimbingan Selesai
+                            </button>
+                        </div>
+                    </form>
+                @elseif ($pertemuan->status === 'selesai')
+                    <div class="alert alert-success d-flex align-items-center mb-3">
+                        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                        <div>
+                            <strong>Bimbingan Selesai!</strong> Sesi pertemuan ini telah diselesaikan pada 
+                            {{ $pertemuan->tanggal_bimbingan_selesai ? $pertemuan->tanggal_bimbingan_selesai->format('d M Y H:i') : '-' }} WIB.
+                        </div>
                     </div>
-                </form>
+                    <div class="p-3 bg-light rounded border">
+                        <div class="fw-semibold small text-muted mb-1">Catatan Hasil Pembahasan Pertemuan:</div>
+                        <div class="text-dark">{{ $pertemuan->catatan_hasil ?: 'Tidak ada catatan hasil pembahasan tersimpan.' }}</div>
+                    </div>
+                @else
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i> Catatan bimbingan hanya dapat diisi jika pengajuan bimbingan telah disetujui.
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -169,9 +197,11 @@
                     </h5>
                     <small class="text-muted">Butir perbaikan yang wajib dikerjakan oleh mahasiswa</small>
                 </div>
-                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTambahRevisi">
-                    <i class="bi bi-plus-lg me-1"></i> Tambah Arahan Revisi
-                </button>
+                @if ($pertemuan->status === 'disetujui')
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTambahRevisi">
+                        <i class="bi bi-plus-lg me-1"></i> Tambah Arahan Revisi
+                    </button>
+                @endif
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -182,7 +212,9 @@
                                 <th>Prioritas</th>
                                 <th>Batas Waktu</th>
                                 <th>Status Pengerjaan</th>
-                                <th class="text-end pe-3">Aksi</th>
+                                @if ($pertemuan->status === 'disetujui')
+                                    <th class="text-end pe-3">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -216,91 +248,93 @@
                                             {{ $revisi->status_label }}
                                         </span>
                                     </td>
-                                    <td class="text-end pe-3">
-                                        <div class="btn-group btn-group-sm">
-                                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEditRevisi{{ $revisi->id }}" title="Ubah Revisi">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalHapusRevisi{{ $revisi->id }}" title="Hapus Revisi">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
+                                    @if ($pertemuan->status === 'disetujui')
+                                        <td class="text-end pe-3">
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEditRevisi{{ $revisi->id }}" title="Ubah Revisi">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalHapusRevisi{{ $revisi->id }}" title="Hapus Revisi">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
 
-                                        <div class="modal fade text-start" id="modalEditRevisi{{ $revisi->id }}" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <form action="{{ route('dosen.pertemuan.revisi.update', $revisi->id) }}" method="POST">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title fs-6 fw-bold">Ubah Arahan Revisi</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <div class="mb-3">
-                                                                <label class="form-label small fw-semibold">Uraian Revisi <span class="text-danger">*</span></label>
-                                                                <textarea name="isi_revisi" rows="3" class="form-control form-control-sm" required>{{ old('isi_revisi', $revisi->isi_revisi) }}</textarea>
+                                            <div class="modal fade text-start" id="modalEditRevisi{{ $revisi->id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <form action="{{ route('dosen.pertemuan.revisi.update', $revisi->id) }}" method="POST">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title fs-6 fw-bold">Ubah Arahan Revisi</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                             </div>
-                                                            <div class="row g-2 mb-3">
-                                                                <div class="col-6">
-                                                                    <label class="form-label small fw-semibold">Prioritas <span class="text-danger">*</span></label>
-                                                                    <select name="prioritas" class="form-select form-select-sm" required>
-                                                                        <option value="tinggi" {{ $revisi->prioritas === 'tinggi' ? 'selected' : '' }}>Tinggi</option>
-                                                                        <option value="sedang" {{ $revisi->prioritas === 'sedang' ? 'selected' : '' }}>Sedang</option>
-                                                                        <option value="rendah" {{ $revisi->prioritas === 'rendah' ? 'selected' : '' }}>Rendah</option>
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label small fw-semibold">Uraian Revisi <span class="text-danger">*</span></label>
+                                                                    <textarea name="isi_revisi" rows="3" class="form-control form-control-sm" required>{{ old('isi_revisi', $revisi->isi_revisi) }}</textarea>
+                                                                </div>
+                                                                <div class="row g-2 mb-3">
+                                                                    <div class="col-6">
+                                                                        <label class="form-label small fw-semibold">Prioritas <span class="text-danger">*</span></label>
+                                                                        <select name="prioritas" class="form-select form-select-sm" required>
+                                                                            <option value="tinggi" {{ $revisi->prioritas === 'tinggi' ? 'selected' : '' }}>Tinggi</option>
+                                                                            <option value="sedang" {{ $revisi->prioritas === 'sedang' ? 'selected' : '' }}>Sedang</option>
+                                                                            <option value="rendah" {{ $revisi->prioritas === 'rendah' ? 'selected' : '' }}>Rendah</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-6">
+                                                                        <label class="form-label small fw-semibold">Tenggat Waktu</label>
+                                                                        <input type="date" name="tenggat_waktu" value="{{ $revisi->tenggat_waktu ? $revisi->tenggat_waktu->format('Y-m-d') : '' }}" class="form-control form-control-sm">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label small fw-semibold">Status Pengerjaan <span class="text-danger">*</span></label>
+                                                                    <select name="status" class="form-select form-select-sm" required>
+                                                                        <option value="belum_selesai" {{ $revisi->status === 'belum_selesai' ? 'selected' : '' }}>Belum Dikerjakan</option>
+                                                                        <option value="sedang_dikerjakan" {{ $revisi->status === 'sedang_dikerjakan' ? 'selected' : '' }}>Sedang Dikerjakan</option>
+                                                                        <option value="selesai" {{ $revisi->status === 'selesai' ? 'selected' : '' }}>Selesai Dikerjakan</option>
+                                                                        <option value="perlu_perbaikan" {{ $revisi->status === 'perlu_perbaikan' ? 'selected' : '' }}>Perlu Perbaikan Ulang</option>
                                                                     </select>
                                                                 </div>
-                                                                <div class="col-6">
-                                                                    <label class="form-label small fw-semibold">Tenggat Waktu</label>
-                                                                    <input type="date" name="tenggat_waktu" value="{{ $revisi->tenggat_waktu ? $revisi->tenggat_waktu->format('Y-m-d') : '' }}" class="form-control form-control-sm">
-                                                                </div>
                                                             </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label small fw-semibold">Status Pengerjaan <span class="text-danger">*</span></label>
-                                                                <select name="status" class="form-select form-select-sm" required>
-                                                                    <option value="belum_selesai" {{ $revisi->status === 'belum_selesai' ? 'selected' : '' }}>Belum Dikerjakan</option>
-                                                                    <option value="sedang_dikerjakan" {{ $revisi->status === 'sedang_dikerjakan' ? 'selected' : '' }}>Sedang Dikerjakan</option>
-                                                                    <option value="selesai" {{ $revisi->status === 'selesai' ? 'selected' : '' }}>Selesai Dikerjakan</option>
-                                                                    <option value="perlu_perbaikan" {{ $revisi->status === 'perlu_perbaikan' ? 'selected' : '' }}>Perlu Perbaikan Ulang</option>
-                                                                </select>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                                                                <button type="submit" class="btn btn-primary btn-sm">Perbarui Revisi</button>
                                                             </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                                                            <button type="submit" class="btn btn-primary btn-sm">Perbarui Revisi</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="modal fade text-start" id="modalHapusRevisi{{ $revisi->id }}" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fs-6 fw-bold">Hapus Arahan Revisi</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p class="mb-0">Hapus poin arahan revisi ini?</p>
-                                                        <div class="text-muted small mt-2 fst-italic">"{{ $revisi->isi_revisi }}"</div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                                                        <form action="{{ route('dosen.pertemuan.revisi.destroy', $revisi->id) }}" method="POST" class="d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger btn-sm">Ya, Hapus</button>
                                                         </form>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
+
+                                            <div class="modal fade text-start" id="modalHapusRevisi{{ $revisi->id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title fs-6 fw-bold">Hapus Arahan Revisi</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="mb-0">Hapus poin arahan revisi ini?</p>
+                                                            <div class="text-muted small mt-2 fst-italic">"{{ $revisi->isi_revisi }}"</div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                                                            <form action="{{ route('dosen.pertemuan.revisi.destroy', $revisi->id) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-danger btn-sm">Ya, Hapus</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-4 text-muted">
+                                    <td colspan="{{ $pertemuan->status === 'disetujui' ? 5 : 4 }}" class="text-center py-4 text-muted">
                                         <i class="bi bi-clipboard-check fs-2 d-block mb-1"></i>
                                         Belum ada daftar arahan atau revisi yang dicatat untuk pertemuan ini.
                                     </td>
@@ -368,6 +402,7 @@
     </div>
 </div>
 
+@if ($pertemuan->status === 'disetujui')
 <div class="modal fade" id="modalTambahRevisi" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -405,4 +440,5 @@
         </div>
     </div>
 </div>
+@endif
 @endsection

@@ -139,69 +139,16 @@
                                 @endif
                             </td>
                             <td class="text-end pe-3">
-                                <div class="d-inline-flex gap-1">
-                                    @if ($pertemuan->status === 'menunggu')
-                                        <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalSetujui{{ $pertemuan->id }}" title="Konfirmasi & Setujui">
-                                            <i class="bi bi-check-lg"></i> Setujui
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalTolak{{ $pertemuan->id }}" title="Tolak">
-                                            <i class="bi bi-x-lg"></i>
-                                        </button>
-                                    @endif
+                                @if ($pertemuan->status === 'disetujui')
                                     <a href="{{ route('dosen.pertemuan.show', $pertemuan->id) }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-file-earmark-text me-1"></i> Detail & Catatan
+                                        <i class="bi bi-pencil-square me-1"></i> Detail & Catatan
                                     </a>
-                                </div>
-
-                                @if ($pertemuan->status === 'menunggu')
-                                    <div class="modal fade text-start" id="modalSetujui{{ $pertemuan->id }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <form action="{{ route('dosen.pertemuan.konfirmasi', $pertemuan->id) }}" method="POST">
-                                                    @csrf
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fs-6 fw-bold">Konfirmasi Pertemuan Bimbingan</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p class="mb-2">Anda akan menyetujui jadwal bimbingan dengan mahasiswa: <strong>{{ $pertemuan->mahasiswa->name }}</strong>.</p>
-                                                        <div class="mb-3">
-                                                            <label class="form-label small fw-semibold">Lokasi Ruangan / Link Online (Opsional)</label>
-                                                            <input type="text" name="tempat" class="form-control form-control-sm" value="{{ $pertemuan->tempat ?? ($pertemuan->jadwalKonsultasi->ruangan_atau_link ?? '') }}" placeholder="Contoh: Ruang Dosen 302 atau link GMeet">
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" class="btn btn-success btn-sm">Setujui Pertemuan</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="modal fade text-start" id="modalTolak{{ $pertemuan->id }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <form action="{{ route('dosen.pertemuan.tolak', $pertemuan->id) }}" method="POST">
-                                                    @csrf
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fs-6 fw-bold">Tolak Pengajuan Bimbingan</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="mb-3">
-                                                            <label class="form-label small fw-semibold">Alasan Penolakan <span class="text-danger">*</span></label>
-                                                            <textarea name="alasan_penolakan" class="form-control form-control-sm" rows="3" placeholder="Sebutkan alasan penolakan atau saran waktu alternatif untuk mahasiswa..." required></textarea>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" class="btn btn-danger btn-sm">Kirim Penolakan</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
+                                @elseif ($pertemuan->status === 'selesai')
+                                    <a href="{{ route('dosen.pertemuan.show', $pertemuan->id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-file-earmark-text me-1"></i> Lihat Catatan
+                                    </a>
+                                @else
+                                    <span class="text-muted small fst-italic">-</span>
                                 @endif
                             </td>
                         </tr>

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bimbingan;
 use App\Models\JadwalKonsultasi;
 use App\Models\PertemuanBimbingan;
-use App\Models\Bimbingan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -15,7 +15,7 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return view('home');
         }
 

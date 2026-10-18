@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bimbingan;
+use App\Models\PertemuanBimbingan;
 use App\Models\PesanChat;
 use App\Models\Revisi;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -44,8 +46,8 @@ class MahasiswaBimbinganController extends Controller
     public function create()
     {
         $user = Auth::user();
-        //cek udah punya dospem belum
-        if (!$user->dosen_pa_id && !$user->dosen_skripsi_id && !$user->dosen_kp_id) {
+        // cek udah punya dospem belum
+        if (! $user->dosen_pa_id && ! $user->dosen_skripsi_id && ! $user->dosen_kp_id) {
             return back()->with('error', 'Anda belum memiliki dosen pembimbing sama sekali. Silakan hubungi admin.');
         }
 
@@ -60,7 +62,7 @@ class MahasiswaBimbinganController extends Controller
             'jenis_bimbingan' => 'required|in:PA,skripsi,KP',
             'topik_pembahasan' => 'required|string|max:255',
             'dosen_id' => 'required|exists:users,id',
-            'jadwal_bimbingan' => 'nullable|date'
+            'jadwal_bimbingan' => 'nullable|date',
         ]);
 
         $dosenYangBenar = null;
@@ -72,25 +74,47 @@ class MahasiswaBimbinganController extends Controller
             $dosenYangBenar = $mahasiswa->dosen_kp_id;
         }
 
-        //validasi keamanan
+        // validasi keamanan
         if ($request->dosen_id != $dosenYangBenar) {
             abort(403, 'Anda tidak diizinkan mengajukan bimbingan ke dosen ini.');
         }
 
-        //simpan data ke tabel bimbingan
-        Bimbingan::create([
+        // simpan data ke tabel bimbingan
+        $bimbingan = Bimbingan::create([
             'mahasiswa_id' => $mahasiswa->id,
             'dosen_id' => $request->dosen_id,
             'jenis_bimbingan' => $request->jenis_bimbingan,
             'topik_pembahasan' => $request->topik_pembahasan,
             'jadwal_bimbingan' => $request->jadwal_bimbingan,
-            'status' => 'pending', 
+            'status' => 'pending',
+        ]);
+
+        $jenisPertemuan = match (strtolower((string) $request->jenis_bimbingan)) {
+            'pa', 'akademik' => 'akademik',
+            'skripsi' => 'skripsi',
+            'kp', 'kerja_praktik' => 'kerja_praktik',
+            default => 'skripsi',
+        };
+
+        $waktu = $request->jadwal_bimbingan ? Carbon::parse($request->jadwal_bimbingan) : null;
+
+        PertemuanBimbingan::create([
+            'bimbingan_id' => $bimbingan->id,
+            'dosen_id' => $bimbingan->dosen_id,
+            'mahasiswa_id' => $bimbingan->mahasiswa_id,
+            'jenis_bimbingan' => $jenisPertemuan,
+            'judul_topik' => $bimbingan->topik_pembahasan,
+            'deskripsi_singkat' => $bimbingan->topik_pembahasan,
+            'metode' => 'tatap_muka',
+            'tanggal' => $waktu ? $waktu->toDateString() : now()->toDateString(),
+            'jam_mulai' => $waktu ? $waktu->format('H:i:s') : null,
+            'status' => 'menunggu',
         ]);
 
         return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan bimbingan berhasil dikirim!');
     }
 
-    public function edit($id) //nampilin form lama
+    public function edit($id) // nampilin form lama
     {
         $bimbingan = Bimbingan::where('id', $id)
             ->where('mahasiswa_id', auth()->id())
@@ -103,7 +127,7 @@ class MahasiswaBimbinganController extends Controller
         return view('mahasiswa.edit-form-bimbingan', compact('bimbingan'));
     }
 
-    public function update(Request $request, $id) 
+    public function update(Request $request, $id)
     {
         $mahasiswa = Auth::user();
 
@@ -112,12 +136,12 @@ class MahasiswaBimbinganController extends Controller
             ->firstOrFail();
 
         if ($bimbingan->status !== 'pending') {
-            return redirect()->route('bimbingan.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
+            return redirect()->route('mahasiswa.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
         }
 
         $request->validate([
             'topik_pembahasan' => 'required|string|max:255',
-            'jadwal_bimbingan' => 'nullable|date'
+            'jadwal_bimbingan' => 'nullable|date',
         ]);
 
         $bimbingan->update([
@@ -125,10 +149,20 @@ class MahasiswaBimbinganController extends Controller
             'jadwal_bimbingan' => $request->jadwal_bimbingan,
         ]);
 
+        if ($bimbingan->pertemuan) {
+            $waktu = $request->jadwal_bimbingan ? Carbon::parse($request->jadwal_bimbingan) : null;
+            $bimbingan->pertemuan->update([
+                'judul_topik' => $request->topik_pembahasan,
+                'deskripsi_singkat' => $request->topik_pembahasan,
+                'tanggal' => $waktu ? $waktu->toDateString() : $bimbingan->pertemuan->tanggal,
+                'jam_mulai' => $waktu ? $waktu->format('H:i:s') : null,
+            ]);
+        }
+
         return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan berhasil diperbarui!');
     }
 
-    public function destroy($id) //hapus
+    public function destroy($id) // hapus
     {
         $bimbingan = Bimbingan::where('id', $id)
             ->where('mahasiswa_id', auth()->id())
@@ -138,12 +172,16 @@ class MahasiswaBimbinganController extends Controller
             return redirect()->route('mahasiswa.jadwal')->with('error', 'Pengajuan yang sudah diproses tidak dapat dibatalkan.');
         }
 
+        if ($bimbingan->pertemuan) {
+            $bimbingan->pertemuan->delete();
+        }
+
         $bimbingan->delete();
 
         return redirect()->route('mahasiswa.jadwal')->with('success', 'Pengajuan bimbingan berhasil dibatalkan.');
     }
 
-    public function chat($id) //nampilin room chat
+    public function chat($id) // nampilin room chat
     {
         $bimbingan = Bimbingan::with(['pesanChats.pengirim', 'dosen'])
             ->where('id', $id)
@@ -169,13 +207,13 @@ class MahasiswaBimbinganController extends Controller
         }
 
         $request->validate([
-            'pesan' => 'required|string'
+            'pesan' => 'required|string',
         ]);
 
         PesanChat::create([
             'bimbingan_id' => $bimbingan->id,
-            'pengirim_id' => Auth::id(), 
-            'pesan' => $request->pesan
+            'pengirim_id' => Auth::id(),
+            'pesan' => $request->pesan,
         ]);
 
         return back();
